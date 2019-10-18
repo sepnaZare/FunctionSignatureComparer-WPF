@@ -1,9 +1,14 @@
 ﻿<Application x:Class="ChangeSetComparer.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:ChangeSetComparer"
+             xmlns:local="clr-namespace:FunctionSignatureComparer"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <Style x:Key="RedStyle" TargetType="{x:Type Control}">
+            <Setter Property="Foreground" Value="Red" />
+            <Setter Property="FontSize" Value="20" />
+            <Setter Property="FontFamily" Value="Times New Roman" />
+            <Setter Property="FontStyle" Value="Normal" />
+        </Style>
     </Application.Resources>
 </Application>

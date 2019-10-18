@@ -127,7 +127,7 @@ namespace FunctionSignatureComparer
         private void ResultPathSelction_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "EXCEL Files (.xlsx)|*.xslx;";
+            openFileDialog.Filter = "CSV Files (.csv)|*.csv;";
             if (openFileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 ResultFilePath = openFileDialog.FileName;

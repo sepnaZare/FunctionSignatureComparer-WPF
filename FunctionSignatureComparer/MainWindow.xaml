@@ -3,9 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ChangeSetComparer"
+        xmlns:local="clr-namespace:FunctionSignatureComparer"
         mc:Ignorable="d"
         Title="Function Signature Comparer" Height="350" Width="525" Background="#FFF376ED" BorderBrush="#FF18527A">
+
     <Grid Margin="0,0,2,18">
         <Grid.RowDefinitions>
             <RowDefinition Height="0*"/>
@@ -14,11 +15,11 @@
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="21*"/>
-            <ColumnDefinition Width="22*"/>
-            <ColumnDefinition Width="229*"/>
+            <ColumnDefinition Width="17*"/>
+            <ColumnDefinition Width="234*"/>
             <ColumnDefinition Width="243*"/>
         </Grid.ColumnDefinitions>
-        <Button x:Name="CompareButton" Content="Compare Function Signature" VerticalAlignment="Top" Margin="10,89,0,0" Height="25" Click="CompareButton_Click" Grid.Column="2" Background="#FF4BB441" RenderTransformOrigin="0.5,0.5" Width="160" HorizontalAlignment="Left" Grid.RowSpan="2" >
+        <Button x:Name="CompareButton" Content="Compare Function Signature" VerticalAlignment="Top" Margin="10,89,0,0" Height="25" Click="CompareButton_Click" Grid.Column="2" Background="#FF4BB441" RenderTransformOrigin="0.5,0.5" Width="170" HorizontalAlignment="Left" Grid.RowSpan="2" FontFamily="Times New Roman" FontSize="14" >
             <Button.RenderTransform>
                 <TransformGroup>
                     <ScaleTransform/>
@@ -28,10 +29,10 @@
                 </TransformGroup>
             </Button.RenderTransform>
         </Button>
-        <TextBox x:Name="Results" Margin="2,119,10,0" TextWrapping="Wrap" Grid.Column="2" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="2"/>
-        <Button x:Name="RepositorySelection" Content="Choose Git Folder" HorizontalAlignment="Left" Margin="2,18,0,0" VerticalAlignment="Top" Width="160" Height="25" Click="RepositorySelection_Click" Background="#FF4BB441" Grid.Column="2" Grid.RowSpan="2"/>
-        <Button x:Name="ResultPathSelction" Content="Select Result File Path" Grid.Column="2" HorizontalAlignment="Left" Height="25" Margin="2,53,0,0" VerticalAlignment="Top" Width="160" Background="#FF4BB441" Click="ResultPathSelction_Click" Grid.RowSpan="2"/>
-        <Image Margin="39,37,10,31" Source="merge.png" Stretch="Fill" Grid.Column="3" Grid.Row="2"/>
-
+        <TextBox x:Name="Results" Margin="2,119,10,0" TextWrapping="Wrap" Grid.Column="2" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="2" FontFamily="Times New Roman" FontSize="14"/>
+        <Button x:Name="RepositorySelection" Content="Choose Git Folder" HorizontalAlignment="Left" Margin="0,18,0,0" VerticalAlignment="Top" Width="170" Height="25" Click="RepositorySelection_Click" Background="#FF4BB441" Grid.Column="2" Grid.RowSpan="2" FontFamily="Times New Roman" FontSize="14"/>
+        <Button x:Name="ResultPathSelction" Content="Select Result File Path" Grid.Column="2" HorizontalAlignment="Left" Height="25" Margin="0,53,0,0" VerticalAlignment="Top" Width="170" Background="#FF4BB441" Click="ResultPathSelction_Click" FontFamily="Times New Roman" FontSize="14" Grid.RowSpan="2"/>
+        <Image Margin="33,64,16,4" Source="Image/merge.png" Stretch="Fill" Grid.Column="3" Grid.Row="2"/>
+        <Image Margin="26,17,23,22" Source="Image/Github-Logo.png" Stretch="Fill" Grid.Column="3" Grid.Row="1"/>
     </Grid>
 </Window>
