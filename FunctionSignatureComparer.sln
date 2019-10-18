@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionSignatureComparer", "FunctionSignatureComparer\FunctionSignatureComparer.csproj", "{F2783B38-8FFD-47E6-861F-79FA8731DAC5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FunctionSignatureComparer", "FunctionSignatureComparer\FunctionSignatureComparer.csproj", "{FCB33400-53DA-420F-9476-726E5D6393C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +11,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{F2783B38-8FFD-47E6-861F-79FA8731DAC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F2783B38-8FFD-47E6-861F-79FA8731DAC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F2783B38-8FFD-47E6-861F-79FA8731DAC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F2783B38-8FFD-47E6-861F-79FA8731DAC5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FCB33400-53DA-420F-9476-726E5D6393C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FCB33400-53DA-420F-9476-726E5D6393C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FCB33400-53DA-420F-9476-726E5D6393C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FCB33400-53DA-420F-9476-726E5D6393C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
