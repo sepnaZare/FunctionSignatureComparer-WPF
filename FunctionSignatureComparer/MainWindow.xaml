@@ -34,5 +34,6 @@
         <Button x:Name="ResultPathSelction" Content="Select Result File Path" Grid.Column="2" HorizontalAlignment="Left" Height="25" Margin="0,53,0,0" VerticalAlignment="Top" Width="170" Background="#FF4BB441" Click="ResultPathSelction_Click" FontFamily="Times New Roman" FontSize="14" Grid.RowSpan="2"/>
         <Image Margin="33,64,16,4" Source="Image/merge.png" Stretch="Fill" Grid.Column="3" Grid.Row="2"/>
         <Image Margin="26,17,23,22" Source="Image/Github-Logo.png" Stretch="Fill" Grid.Column="3" Grid.Row="1"/>
+        <Button Content="Button" Grid.Column="2" HorizontalAlignment="Left" Height="35" Margin="195,43,0,0" Grid.RowSpan="2" VerticalAlignment="Top" Width="39" Click="Button_Click"/>
     </Grid>
 </Window>
