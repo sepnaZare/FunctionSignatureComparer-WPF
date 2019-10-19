@@ -17,7 +17,7 @@ namespace FunctionSignatureComparer
         private string GitRepositoryPath { get; set; }
         private string ResultFilePath { get; set; }
 
-        private Regex MutipleLineParameterAdded => new Regex(@"(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\((.|(\n|\r|\r\n))*?\)(\s|\w)*");
+        private Regex MutipleLineParameterAdded => new Regex(@"(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\((.|(\n|\r|\r\n))*?\)(\s|\w)*{");
         private Regex InlineMethodDeclarationDeleted => new Regex(@"-(\s)*(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\(.*?\)(\s|\w)*");
         private Regex InlineMethodDeclarationAdded => new Regex(@"\+(\s)*(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\((.|(\n|\r|\r\n))*?\)(\s|\w)*");
 
@@ -35,11 +35,11 @@ namespace FunctionSignatureComparer
                 return;
             }
 
-            Results.Text += "Processing...";
+            Results.Text += "Processing...\n";
 
             CompareFunctionsSignitureBetweenCommits();
 
-            Results.Text += "Completed...";
+            Results.Text += "Completed..\n.";
         }
 
         private void CompareFunctionsSignitureBetweenCommits()
@@ -49,7 +49,7 @@ namespace FunctionSignatureComparer
 
 
             finalResult.WriteLine(string.Format("{0},{1},{2},{3}", "commitSHA", "JavaFile", "oldFunctionSignature", "newFunctionSignature"));
-          
+
             using (var repo = new Repository(GitRepositoryPath))
             {
                 foreach (var commit in repo.Head.Commits)
@@ -68,73 +68,120 @@ namespace FunctionSignatureComparer
                     foreach (TreeEntryChanges treeEntryChanges in treeChanges)
                     {
                         var changesInFile = Regex.Split(treeEntryChanges.Patch, @"\n@@");
-                        foreach (var fileChangedSection in changesInFile) {
+                        foreach (var fileChangedSection in changesInFile)
+                        {
                             var changedPart = InlineMethodDeclarationDeleted.Match(fileChangedSection);
-                            if (changedPart.Success)
+                            try
                             {
-                                var result = DetectInlineParameterAdd(commit, fileChangedSection, changedPart, treeEntryChanges.Path);
-                                if (!string.IsNullOrEmpty(result))
-                                    finalResult.WriteLine(result);
-                                continue;
-                            }
+                                if (changedPart.Success)
+                                {
+                                    var result = DetectInlineParameterAdd(commit, fileChangedSection, changedPart, treeEntryChanges.Path);
+                                    if (!string.IsNullOrEmpty(result))
+                                        finalResult.WriteLine(result);
 
-                            changedPart = MutipleLineParameterAdded.Match(fileChangedSection);
-                            if (changedPart.Success)
+                                    continue;
+                                }
+
+                                changedPart = MutipleLineParameterAdded.Match(fileChangedSection);
+                                if (changedPart.Success)
+                                {
+                                    var result = DetectNewLineParameterAdd(commit, fileChangedSection, changedPart, treeEntryChanges.Path);
+                                    if (!string.IsNullOrEmpty(result))
+                                        finalResult.WriteLine(result);
+
+                                    continue;
+                                }
+                            }
+                            catch
                             {
-                                var result = DetectNewLineParameterAdd(commit, fileChangedSection, changedPart, treeEntryChanges.Path);
-                                if (!string.IsNullOrEmpty(result))
-                                    finalResult.WriteLine(result);
                                 continue;
                             }
                         }
 
                     }
 
+                    if (!string.IsNullOrEmpty(finalResult.ToString())){
+                        File.AppendAllText(resultFilePath, finalResult.ToString());
+                        finalResult = new StringWriter();
+                    }
                 }
-
             }
-
-            File.WriteAllText(resultFilePath, finalResult.ToString(), new UTF8Encoding());
+            
         }
 
         private string DetectNewLineParameterAdd(Commit commit, string fileChangedSection, Match deletedPart, string javaFile)
         {
+            var commitSHA = "\"" + commit.Sha + "\"";
+            var newFunctionSignature = string.Empty;
+            var oldFunctionSignature = string.Empty;
+
             Regex AllChangesDetection = new Regex(@"(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\((.|(\n|\r|\r\n))*?\) (.|(\n|\r|\r\n))*?\)(\s|\w)*{");
-            
+
             Match signatureAllchanges = AllChangesDetection.Match(fileChangedSection);
 
-            if (!signatureAllchanges.Value.Contains("+ "))
-                return string.Empty;
-            
-            int indexOfMinus = signatureAllchanges.Value.IndexOf('-');
-            int indexOfPlus = signatureAllchanges.Value.IndexOf('+', indexOfMinus + 1);
-            if(indexOfMinus < 0 || indexOfPlus < 0 || !signatureAllchanges.Success)
+            if (!(deletedPart.Value.Contains("+ ") || deletedPart.Value.Contains("- ")))
                 return string.Empty;
 
-            var addedPart = (signatureAllchanges.Value.Substring(0, indexOfMinus) + signatureAllchanges.Value.Substring(indexOfPlus + 1));
+            if (deletedPart.Value.Contains("+ ") && deletedPart.Value.Contains("- ") && !signatureAllchanges.Success)
+            {
+                int indexOfMinus = deletedPart.Value.IndexOf('-');
+                int indexOfPlus = deletedPart.Value.IndexOf('+', indexOfMinus + 1);
+                if ((indexOfMinus < 0 || indexOfPlus < 0))
+                    return string.Empty;
 
-            if (!IsChangedParameterCount(addedPart, deletedPart.Value))
-                return String.Empty;
+                var tempNewSignature = (deletedPart.Value.Substring(0, indexOfMinus) + deletedPart.Value.Substring(indexOfPlus + 1)); ;
+                var tempOldSignature = deletedPart.Value.Remove(indexOfMinus, indexOfPlus - indexOfMinus);
 
-            var commitSHA = "\"" + commit.Sha + "\"";
-            string newFunctionSignature = "\"" + ModifyFunctionSignatureFormat(addedPart) + "\"";
-            string oldFunctionSignature = "\"" + ModifyFunctionSignatureFormat(deletedPart.Value) + "\"";
+                newFunctionSignature = ModifyFunctionSignatureFormat(tempNewSignature);
+                oldFunctionSignature = ModifyFunctionSignatureFormat(tempOldSignature);
+            }
+            else
+            {
+                int indexOfMinus = signatureAllchanges.Value.IndexOf('-');
+                int indexOfPlus = signatureAllchanges.Value.IndexOf('+', indexOfMinus + 1);
+                if (indexOfMinus < 0 || indexOfPlus < 0 || !signatureAllchanges.Success)
+                    return string.Empty;
 
-            return (string.Format("{0},{1},{2},{3}", commitSHA, javaFile, oldFunctionSignature, newFunctionSignature));
+                var addedPart = (signatureAllchanges.Value.Substring(0, indexOfMinus) + signatureAllchanges.Value.Substring(indexOfPlus + 1));
+
+                
+                newFunctionSignature = ModifyFunctionSignatureFormat(addedPart);
+                oldFunctionSignature = ModifyFunctionSignatureFormat(deletedPart.Value);
+
+            }
+            if (string.IsNullOrEmpty(oldFunctionSignature) || string.IsNullOrEmpty(newFunctionSignature))
+                return string.Empty;
+
+            if (string.IsNullOrEmpty(newFunctionSignature) || string.IsNullOrEmpty(oldFunctionSignature))
+                return string.Empty;
+
+            if (!IsChangedParameterCount(newFunctionSignature, oldFunctionSignature))
+                return string.Empty;
+
+            return (string.Format("{0},{1},{2},{3}", commitSHA, javaFile, "\"" + oldFunctionSignature + "\"", "\"" + newFunctionSignature + "\""));
         }
 
         private string DetectInlineParameterAdd(Commit commit, string fileChangedSection, Match deletedPart, string javaFile)
         {
             var addedPart = InlineMethodDeclarationAdded.Match(fileChangedSection);
 
-            if (!IsChangedParameterCount(addedPart.Value, deletedPart.Value))
-                return String.Empty;
+            if (!addedPart.Success)
+                return string.Empty;
 
             var commitSHA = "\"" + commit.Sha + "\"";
-            var oldSignature = "\"" + ModifyFunctionSignatureFormat(deletedPart.Value) + "\"";
-            var newSignature = "\"" + ModifyFunctionSignatureFormat(addedPart.Value) + "\"";
+            var oldSignature = ModifyFunctionSignatureFormat(deletedPart.Value);
+            var newSignature = ModifyFunctionSignatureFormat(addedPart.Value);
 
-            return string.Format("{0},{1},{2},{3}", commitSHA, javaFile, oldSignature, newSignature);
+            if (oldSignature.Split('(')[0].Trim() != newSignature.Split('(')[0].Trim())
+                return string.Empty;
+
+            if (string.IsNullOrEmpty(oldSignature) || string.IsNullOrEmpty(newSignature))
+                return string.Empty;
+
+            if (!IsChangedParameterCount(newSignature, oldSignature))
+                return string.Empty;
+
+            return string.Format("{0},{1},{2},{3}", commitSHA, javaFile, "\"" + oldSignature + "\"", "\"" + newSignature + "\"");
         }
 
         private string ModifyFunctionSignatureFormat(string functionSignature)
@@ -142,7 +189,10 @@ namespace FunctionSignatureComparer
             var splittedPart = functionSignature.Split('(');
             var parameter = splittedPart[1].Trim();
 
-            return Regex.Replace($"{splittedPart[0].TrimStart()}({parameter.Split(')')[0]})", @"\t|\n|\r|\s\s|\+|-","");
+            if (splittedPart[1].Contains("public ") || splittedPart[1].Contains("private") || splittedPart[1].Contains("protected"))
+                return string.Empty;
+
+            return Regex.Replace($"{splittedPart[0].TrimStart()}({parameter.Split(')')[0]})", @"\t|\n|\r|\s\s|\+|-", "");
         }
 
         private bool IsChangedParameterCount(string newFunctionSignature, string oldFunctionSignature)
@@ -188,10 +238,5 @@ namespace FunctionSignatureComparer
             }
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            var items = Regex.Split("\n@@ shabnan @@ test \n@@ djkswjed @@ hjhjaj" , @"\n@@");
-            var x = items[0];
-        }
     }
 }
