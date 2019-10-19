@@ -17,6 +17,11 @@ namespace FunctionSignatureComparer
         private string GitRepositoryPath { get; set; }
         private string ResultFilePath { get; set; }
 
+        private Regex MutipleLineParameterAdded => new Regex(@"(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\((.|(\n|\r|\r\n))*?\)(\s|\w)*");
+        private Regex InlineMethodDeclarationDeleted => new Regex(@"-(\s)*(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\(.*?\)(\s|\w)*");
+        private Regex InlineMethodDeclarationAdded => new Regex(@"\+(\s)*(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\((.|(\n|\r|\r\n))*?\)(\s|\w)*");
+
+
         public MainWindow()
         {
             InitializeComponent();
@@ -41,14 +46,10 @@ namespace FunctionSignatureComparer
         {
             var resultFilePath = string.IsNullOrEmpty(ResultFilePath) ? $"{GitRepositoryPath}\\Result.csv" : ResultFilePath;
             StringWriter finalResult = new StringWriter();
-            Regex javaFunctionRegex = new Regex(@"\s*-\s*(public|private|protected)\s+(static|\s+)?\w+\s+\w+\s*\(.*?\)(\s|\w)*");
+
 
             finalResult.WriteLine(string.Format("{0},{1},{2},{3}", "commitSHA", "JavaFile", "oldFunctionSignature", "newFunctionSignature"));
-            string commitSHA = string.Empty;
-            string JavaFile = string.Empty;
-            string oldFunctionSignature = string.Empty;
-            string newFunctionSignature = string.Empty;
-
+          
             using (var repo = new Repository(GitRepositoryPath))
             {
                 foreach (var commit in repo.Head.Commits)
@@ -66,39 +67,90 @@ namespace FunctionSignatureComparer
 
                     foreach (TreeEntryChanges treeEntryChanges in treeChanges)
                     {
-                        var AllChangedLines = treeEntryChanges.Patch.Split('\n').Where(s => s.StartsWith("-") || s.StartsWith("+")).ToList();
-                        for (int i = 0; i < AllChangedLines.Count(); i++)
-                        {
-                            if (!(AllChangedLines[i].Contains("public") || AllChangedLines[i].Contains("private") || AllChangedLines[i].Contains("protected")))
-                                continue;
-
-                            if (javaFunctionRegex.Match(AllChangedLines[i]).Success)
+                        var changesInFile = Regex.Split(treeEntryChanges.Patch, @"\n@@");
+                        foreach (var fileChangedSection in changesInFile) {
+                            var changedPart = InlineMethodDeclarationDeleted.Match(fileChangedSection);
+                            if (changedPart.Success)
                             {
-                                var functionName = AllChangedLines[i].Split('(')[0].Replace("-", "+");
-                                if (i + 1 >= AllChangedLines.Count())
-                                    continue;
+                                var result = DetectInlineParameterAdd(commit, fileChangedSection, changedPart, treeEntryChanges.Path);
+                                if (!string.IsNullOrEmpty(result))
+                                    finalResult.WriteLine(result);
+                                continue;
+                            }
 
-                                if (AllChangedLines[i + 1].Trim().Contains(functionName.Trim()))
-                                {
-                                    if (AllChangedLines[i].Split(')')[0].Split(',').Length < AllChangedLines[i + 1].Split(')')[0].Split(',').Length)
-                                    {
-                                        commitSHA = "\"" + commit.Sha + "\"";
-                                        JavaFile = "\"" + treeEntryChanges.Path + "\"";
-                                        oldFunctionSignature = "\"" + AllChangedLines[i].Split(')')[0].Replace("- ", "") + ")\"";
-                                        newFunctionSignature = "\"" + AllChangedLines[i + 1].Split(')')[0].Replace("+ ", "") + ")\"";
-                                        var message = "\"" + commit.Message + "\"";
-                                        finalResult.WriteLine(string.Format("{0},{1},{2},{3},{4}", commitSHA, JavaFile, oldFunctionSignature, newFunctionSignature, message));
-                                    }
-                                }
+                            changedPart = MutipleLineParameterAdded.Match(fileChangedSection);
+                            if (changedPart.Success)
+                            {
+                                var result = DetectNewLineParameterAdd(commit, fileChangedSection, changedPart, treeEntryChanges.Path);
+                                if (!string.IsNullOrEmpty(result))
+                                    finalResult.WriteLine(result);
+                                continue;
                             }
                         }
+
                     }
 
                 }
-                
+
             }
 
             File.WriteAllText(resultFilePath, finalResult.ToString(), new UTF8Encoding());
+        }
+
+        private string DetectNewLineParameterAdd(Commit commit, string fileChangedSection, Match deletedPart, string javaFile)
+        {
+            Regex AllChangesDetection = new Regex(@"(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\((.|(\n|\r|\r\n))*?\) (.|(\n|\r|\r\n))*?\)(\s|\w)*{");
+            
+            Match signatureAllchanges = AllChangesDetection.Match(fileChangedSection);
+
+            if (!signatureAllchanges.Value.Contains("+ "))
+                return string.Empty;
+            
+            int indexOfMinus = signatureAllchanges.Value.IndexOf('-');
+            int indexOfPlus = signatureAllchanges.Value.IndexOf('+', indexOfMinus + 1);
+            if(indexOfMinus < 0 || indexOfPlus < 0 || !signatureAllchanges.Success)
+                return string.Empty;
+
+            var addedPart = (signatureAllchanges.Value.Substring(0, indexOfMinus) + signatureAllchanges.Value.Substring(indexOfPlus + 1));
+
+            if (!IsChangedParameterCount(addedPart, deletedPart.Value))
+                return String.Empty;
+
+            var commitSHA = "\"" + commit.Sha + "\"";
+            string newFunctionSignature = "\"" + ModifyFunctionSignatureFormat(addedPart) + "\"";
+            string oldFunctionSignature = "\"" + ModifyFunctionSignatureFormat(deletedPart.Value) + "\"";
+
+            return (string.Format("{0},{1},{2},{3}", commitSHA, javaFile, oldFunctionSignature, newFunctionSignature));
+        }
+
+        private string DetectInlineParameterAdd(Commit commit, string fileChangedSection, Match deletedPart, string javaFile)
+        {
+            var addedPart = InlineMethodDeclarationAdded.Match(fileChangedSection);
+
+            if (!IsChangedParameterCount(addedPart.Value, deletedPart.Value))
+                return String.Empty;
+
+            var commitSHA = "\"" + commit.Sha + "\"";
+            var oldSignature = "\"" + ModifyFunctionSignatureFormat(deletedPart.Value) + "\"";
+            var newSignature = "\"" + ModifyFunctionSignatureFormat(addedPart.Value) + "\"";
+
+            return string.Format("{0},{1},{2},{3}", commitSHA, javaFile, oldSignature, newSignature);
+        }
+
+        private string ModifyFunctionSignatureFormat(string functionSignature)
+        {
+            var splittedPart = functionSignature.Split('(');
+            var parameter = splittedPart[1].Trim();
+
+            return Regex.Replace($"{splittedPart[0].TrimStart()}({parameter.Split(')')[0]})", @"\t|\n|\r|\s\s|\+|-","");
+        }
+
+        private bool IsChangedParameterCount(string newFunctionSignature, string oldFunctionSignature)
+        {
+            if (newFunctionSignature.Split(',').Length > oldFunctionSignature.Split(',').Length)
+                return true;
+
+            return false;
         }
 
         private void RepositorySelection_Click(object sender, RoutedEventArgs e)
@@ -138,12 +190,8 @@ namespace FunctionSignatureComparer
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            //Regex javaFunctionRegex = new Regex(@"\s*-\s*(public|private|protected)?\s+(static|\s+)?\w+\s+\w+\s*\(.*?\)(\s|\w)*");
-            //var ajavafile = "-    private void loadMenu(EntityInstance menuInstance) throws Exception {";
-            //if (javaFunctionRegex.Match(ajavafile).Success)
-            //{
-            //    Results.Text += "I am a java function";
-            //}
+            var items = Regex.Split("\n@@ shabnan @@ test \n@@ djkswjed @@ hjhjaj" , @"\n@@");
+            var x = items[0];
         }
     }
 }
