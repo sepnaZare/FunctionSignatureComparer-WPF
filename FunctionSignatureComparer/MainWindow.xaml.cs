@@ -56,10 +56,7 @@ namespace FunctionSignatureComparer
                 {
                     var commitTree = commit.Tree;
                     var parentCommitTree = commit?.Parents.FirstOrDefault()?.Tree;
-
-                    //if (commit.Parents.Count() > 1)
-                    //    Results.Text += "I have more than one parent";
-
+                    
                     if (parentCommitTree == null)
                         continue;
 
@@ -119,10 +116,10 @@ namespace FunctionSignatureComparer
 
             Match signatureAllchanges = AllChangesDetection.Match(fileChangedSection);
 
-            if (!(deletedPart.Value.Contains("+ ") || deletedPart.Value.Contains("- ")))
+            if (!(deletedPart.Value.Contains("+") || deletedPart.Value.Contains("-")))
                 return string.Empty;
 
-            if (deletedPart.Value.Contains("+ ") && deletedPart.Value.Contains("- ") && !signatureAllchanges.Success)
+            if (deletedPart.Value.Contains("+") && deletedPart.Value.Contains("-") && !signatureAllchanges.Success)
             {
                 int indexOfMinus = deletedPart.Value.IndexOf('-');
                 int indexOfPlus = deletedPart.Value.IndexOf('+', indexOfMinus + 1);
@@ -135,11 +132,21 @@ namespace FunctionSignatureComparer
                 newFunctionSignature = ModifyFunctionSignatureFormat(tempNewSignature);
                 oldFunctionSignature = ModifyFunctionSignatureFormat(tempOldSignature);
             }
+            else if(deletedPart.Value.Contains("+") && !deletedPart.Value.Contains("-") && signatureAllchanges.Success)
+            {
+                int indexOfPlus = deletedPart.Value.IndexOf('+');
+                int lenghtofChange = deletedPart.Value.Split('+')[1].Split('\n')[0].Length + 1;
+
+                var tempOldSignature = deletedPart.Value.Remove(indexOfPlus, lenghtofChange);
+
+                newFunctionSignature = ModifyFunctionSignatureFormat(deletedPart.Value);
+                oldFunctionSignature = ModifyFunctionSignatureFormat(tempOldSignature);
+            }
             else
             {
                 int indexOfMinus = signatureAllchanges.Value.IndexOf('-');
                 int indexOfPlus = signatureAllchanges.Value.IndexOf('+', indexOfMinus + 1);
-                if (indexOfMinus < 0 || indexOfPlus < 0 || !signatureAllchanges.Success)
+                if (indexOfMinus < 0 || indexOfPlus < 0)
                     return string.Empty;
 
                 var addedPart = (signatureAllchanges.Value.Substring(0, indexOfMinus) + signatureAllchanges.Value.Substring(indexOfPlus + 1));
@@ -237,6 +244,6 @@ namespace FunctionSignatureComparer
                 Results.Text += $"You Select {openFileDialog.FileName} File as Result File...\n";
             }
         }
-
+        
     }
 }
