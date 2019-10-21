@@ -58,47 +58,53 @@ namespace FunctionSignatureComparer
                     
                     if (parentCommitTree == null)
                         continue;
-
-                    TreeChanges treeChanges = repo.Diff.Compare(parentCommitTree, commitTree);
-
-                    foreach (TreeEntryChanges treeEntryChanges in treeChanges)
+                    try
                     {
-                        var changesInFile = Regex.Split(treeEntryChanges.Patch, @"\n@@");
-                        foreach (var fileChangedSection in changesInFile)
+                        TreeChanges treeChanges = repo.Diff.Compare(parentCommitTree, commitTree);
+
+                        foreach (TreeEntryChanges treeEntryChanges in treeChanges)
                         {
-                            var changedPart = InlineMethodDeclarationDeleted.Match(fileChangedSection);
-                            try
+                            var changesInFile = Regex.Split(treeEntryChanges.Patch, @"\n@@");
+                            foreach (var fileChangedSection in changesInFile)
                             {
-                                if (changedPart.Success)
+                                var changedPart = InlineMethodDeclarationDeleted.Match(fileChangedSection);
+                                try
                                 {
-                                    var result = DetectInlineParameterAdd(commit, fileChangedSection, changedPart, treeEntryChanges.Path);
-                                    if (!string.IsNullOrEmpty(result))
-                                        finalResult.WriteLine(result);
+                                    if (changedPart.Success)
+                                    {
+                                        var result = DetectInlineParameterAdd(commit, fileChangedSection, changedPart, treeEntryChanges.Path);
+                                        if (!string.IsNullOrEmpty(result))
+                                            finalResult.WriteLine(result);
 
-                                    continue;
+                                        continue;
+                                    }
+
+                                    changedPart = MutipleLineParameterAdded.Match(fileChangedSection);
+                                    if (changedPart.Success)
+                                    {
+                                        var result = DetectNewLineParameterAdd(commit, fileChangedSection, changedPart, treeEntryChanges.Path);
+                                        if (!string.IsNullOrEmpty(result))
+                                            finalResult.WriteLine(result);
+
+                                        continue;
+                                    }
                                 }
-
-                                changedPart = MutipleLineParameterAdded.Match(fileChangedSection);
-                                if (changedPart.Success)
+                                catch (Exception e)
                                 {
-                                    var result = DetectNewLineParameterAdd(commit, fileChangedSection, changedPart, treeEntryChanges.Path);
-                                    if (!string.IsNullOrEmpty(result))
-                                        finalResult.WriteLine(result);
-
                                     continue;
                                 }
                             }
-                            catch(Exception e)
-                            {
-                                continue;
-                            }
+
                         }
 
+                        if (!string.IsNullOrEmpty(finalResult.ToString())){
+                            File.AppendAllText(resultFilePath, finalResult.ToString());
+                            finalResult = new StringWriter();
+                        }
                     }
-
-                    if (!string.IsNullOrEmpty(finalResult.ToString())){
-                        File.AppendAllText(resultFilePath, finalResult.ToString());
-                        finalResult = new StringWriter();
+                    catch
+                    {
+                        continue;
                     }
                 }
             }

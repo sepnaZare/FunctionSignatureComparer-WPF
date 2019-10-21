@@ -1,0 +1,9 @@
+commitSHA,JavaFile,oldFunctionSignature,newFunctionSignature
+"e99dcea7483cbd3a4988c4c23f50ac0f7fbd25d7",retrofit-mock/src/main/java/retrofit/MockRestAdapter.java,"public static MockRestAdapter from(RestAdapter restAdapter)","public static MockRestAdapter from(RestAdapter restAdapter, Executor executor)"
+"56f11374c2f5d037e57d274a3c72f9694cd9e05c",retrofit-mock/src/main/java/retrofit/MockRestAdapter.java,"public static MockRestAdapter from(RestAdapter restAdapter)","public static MockRestAdapter from(RestAdapter restAdapter, Executor executor)"
+"3436cfb51e67f229a2656cc46e4baa775c16c535",retrofit/src/main/java/retrofit/RequestBuilder.java,"private void addQueryParam(String name, String value, boolean urlEncodeValue)","private void addQueryParam(String name, Object value, boolean encodeName, boolean encodeValue)"
+"46598adb1da0f6d2498d9f8b815b170bf95fe1f8",retrofit/src/main/java/retrofit/RequestBuilder.java,"private void addQueryParam(String name, String value, boolean urlEncodeValue)","private void addQueryParam(String name, Object value, boolean encodeName, boolean encodeValue)"
+"414f27419e5daffdf6a2e88ef6a122eab983f6ea",retrofit/src/main/java/retrofit/RestMethodInfo.java,"private void validatePathName(String name)","private void validatePathName(int index, String name)"
+"4eaf974bbde6dc7eb4a99a0c5bcfe27d1d6cde18",retrofit/src/main/java/retrofit/RestMethodInfo.java,"private void validatePathName(String name)","private void validatePathName(int index, String name)"
+"4f318d2d5b0fbc3c2a11f05be46427a495cfcf9d",modules/http/src/retrofit/http/Headers.java,"public void setOn(HttpMessage message)","public void setOn(HttpMessage message, String mimeType)"
+"a1cee2eb489f4a3369ff24e94d39dabf939aa12e",modules/http/src/retrofit/http/Headers.java,"public void setOn(HttpMessage message)","public void setOn(HttpMessage message, String mimeType)"
