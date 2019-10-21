@@ -20,8 +20,7 @@ namespace FunctionSignatureComparer
         private Regex MutipleLineParameterAdded => new Regex(@"(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\((.|(\n|\r|\r\n))*?\)(\s|\w)*{");
         private Regex InlineMethodDeclarationDeleted => new Regex(@"-(\s)*(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\(.*?\)(\s|\w)*");
         private Regex InlineMethodDeclarationAdded => new Regex(@"\+(\s)*(public|private|protected)\s+(static\s+|\s)?\w+\s+\w+\s*\((.|(\n|\r|\r\n))*?\)(\s|\w)*");
-
-
+        private Regex CommentsRegex => new Regex(@"(?://.*)|(/\\*(?:.|[\\n\\r])*?\\*/)");
         public MainWindow()
         {
             InitializeComponent();
@@ -89,7 +88,7 @@ namespace FunctionSignatureComparer
                                     continue;
                                 }
                             }
-                            catch
+                            catch(Exception e)
                             {
                                 continue;
                             }
@@ -164,7 +163,7 @@ namespace FunctionSignatureComparer
 
             if (!IsChangedParameterCount(newFunctionSignature, oldFunctionSignature))
                 return string.Empty;
-
+            
             return (string.Format("{0},{1},{2},{3}", commitSHA, javaFile, "\"" + oldFunctionSignature + "\"", "\"" + newFunctionSignature + "\""));
         }
 
@@ -187,7 +186,7 @@ namespace FunctionSignatureComparer
 
             if (!IsChangedParameterCount(newSignature, oldSignature))
                 return string.Empty;
-
+            
             return string.Format("{0},{1},{2},{3}", commitSHA, javaFile, "\"" + oldSignature + "\"", "\"" + newSignature + "\"");
         }
 
@@ -196,10 +195,13 @@ namespace FunctionSignatureComparer
             var splittedPart = functionSignature.Split('(');
             var parameter = splittedPart[1].Trim();
 
+            if (CheckParameterFormatValidation(parameter) ==  CheckResult.Invalid)
+                return string.Empty;
+
             if (splittedPart[1].Contains("public ") || splittedPart[1].Contains("private") || splittedPart[1].Contains("protected"))
                 return string.Empty;
 
-            return Regex.Replace($"{splittedPart[0].TrimStart()}({parameter.Split(')')[0]})", @"\t|\n|\r|\s\s|\+|-", "");
+            return Regex.Replace(Regex.Replace($"{splittedPart[0].TrimStart()}({parameter.Split(')')[0]})", @"\t|\n|\r|\s\s|\+|-", ""), @"//.*|/\*.*\*/", "");
         }
 
         private bool IsChangedParameterCount(string newFunctionSignature, string oldFunctionSignature)
@@ -244,6 +246,15 @@ namespace FunctionSignatureComparer
                 Results.Text += $"You Select {openFileDialog.FileName} File as Result File...\n";
             }
         }
-        
+
+        private CheckResult CheckParameterFormatValidation(string param)
+        {
+            Regex paramRegex = new Regex(@"(\s*\w+\s*\w+(,\s*\w+\s*\w+\s*)*|\s*)\)");
+
+            if (paramRegex.Match(param).Value == param)
+                return CheckResult.Valid;
+
+            return CheckResult.Invalid;
+        }
     }
 }
