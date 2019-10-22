@@ -15,7 +15,6 @@
 [Rr]elease/
 [Rr]eleases/
 x64/
-x86/
 bld/
 [Oo]bj/
 [Ll]og/
@@ -50,7 +49,6 @@ artifacts/
 *.meta
 *.obj
 *.pch
-*.pdb
 *.pgc
 *.pgd
 *.rsp
